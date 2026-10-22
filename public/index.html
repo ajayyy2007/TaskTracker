@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DevOps Starter — Task Tracker</title>
+  <style>
+    :root { color-scheme: light; --ink:#172033; --muted:#65718a; --accent:#375dfb; --line:#e3e8f2; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; color:var(--ink); background:#f5f7fc; }
+    main { max-width:760px; margin:56px auto; padding:0 20px; }
+    .eyebrow { color:var(--accent); font-weight:750; letter-spacing:.09em; text-transform:uppercase; font-size:.78rem; }
+    h1 { margin:.5rem 0; font-size:clamp(2rem,5vw,3rem); letter-spacing:-.04em; }
+    .intro { color:var(--muted); line-height:1.6; }
+    .panel { background:white; border:1px solid var(--line); border-radius:18px; padding:22px; margin-top:26px; box-shadow:0 12px 32px #24365b0a; }
+    form { display:flex; gap:10px; }
+    input { min-width:0; flex:1; border:1px solid var(--line); border-radius:10px; padding:12px 14px; font:inherit; }
+    button { border:0; border-radius:10px; background:var(--accent); color:white; padding:11px 15px; font:inherit; font-weight:650; cursor:pointer; }
+    button:focus-visible, input:focus-visible { outline:3px solid #9fb1ff; outline-offset:2px; }
+    ul { list-style:none; padding:0; margin:18px 0 0; }
+    li { display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid var(--line); }
+    li:last-child { border-bottom:0; }
+    li span { flex:1; overflow-wrap:anywhere; }
+    li.done span { color:var(--muted); text-decoration:line-through; }
+    .delete { background:#eef1f8; color:#303b53; }
+    .status { margin-top:16px; color:var(--muted); font-size:.9rem; }
+    .error { color:#b42318; }
+    footer { color:var(--muted); font-size:.85rem; margin:22px 2px; }
+    @media (max-width:480px) { form { flex-direction:column; } form button { width:100%; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">DevOps practice project</div>
+    <h1>Task Tracker</h1>
+    <p class="intro">A small, working web app we'll containerize, automate with GitHub Actions, and deploy on AWS using CloudFormation.</p>
+    <section class="panel" aria-labelledby="tasks-heading">
+      <h2 id="tasks-heading">Your tasks</h2>
+      <form id="task-form">
+        <input id="task-title" name="title" placeholder="Add a task…" maxlength="120" required>
+        <button type="submit">Add task</button>
+      </form>
+      <ul id="task-list" aria-live="polite"></ul>
+      <p id="status" class="status">Loading tasks…</p>
+    </section>
+    <footer>Health check: <code>/health</code> · API: <code>/api/tasks</code></footer>
+  </main>
+  <script>
+    const list = document.querySelector("#task-list");
+    const statusText = document.querySelector("#status");
+    const form = document.querySelector("#task-form");
+    const titleInput = document.querySelector("#task-title");
+
+    async function request(url, options = {}) {
+      const response = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+        ...options
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Request failed (${response.status})`);
+      }
+      return response.status === 204 ? null : response.json();
+    }
+
+    function renderTasks(tasks) {
+      list.replaceChildren();
+      for (const task of tasks) {
+        const item = document.createElement("li");
+        if (task.done) item.classList.add("done");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.done;
+        checkbox.setAttribute("aria-label", `Mark ${task.title} complete`);
+        checkbox.addEventListener("change", async () => {
+          try {
+            await request(`/api/tasks/${task.id}`, {
+              method: "PATCH",
+              body: JSON.stringify({ done: checkbox.checked })
+            });
+            await loadTasks();
+          } catch (error) { showError(error); }
+        });
+
+        const title = document.createElement("span");
+        title.textContent = task.title;
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "delete";
+        remove.textContent = "Delete";
+        remove.addEventListener("click", async () => {
+          try {
+            await request(`/api/tasks/${task.id}`, { method: "DELETE" });
+            await loadTasks();
+          } catch (error) { showError(error); }
+        });
+
+        item.append(checkbox, title, remove);
+        list.append(item);
+      }
+      statusText.classList.remove("error");
+      statusText.textContent = `${tasks.filter(t => t.done).length} of ${tasks.length} tasks completed`;
+    }
+
+    function showError(error) {
+      statusText.classList.add("error");
+      statusText.textContent = error.message;
+    }
+
+    async function loadTasks() {
+      try { renderTasks(await request("/api/tasks")); }
+      catch (error) { showError(error); }
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const title = titleInput.value.trim();
+      if (!title) return;
+      try {
+        await request("/api/tasks", { method: "POST", body: JSON.stringify({ title }) });
+        titleInput.value = "";
+        await loadTasks();
+        titleInput.focus();
+      } catch (error) { showError(error); }
+    });
+
+    loadTasks();
+  </script>
+</body>
+</html>
