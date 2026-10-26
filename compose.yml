@@ -1,6 +1,7 @@
 services:
   website:
     build: .
+    image: fullapp:v1
     container_name: completeappcont1
     ports:
       - "3000:3000"

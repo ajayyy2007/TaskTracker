@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # DevOps Starter App — Task Tracker
 
 A small Node.js + Express application for practising the full DevOps workflow.
@@ -38,3 +39,7 @@ Tasks are held in memory, so they reset when the server restarts. This is intent
 5. Provision AWS networking with CloudFormation.
 6. Create a deployment target and registry.
 7. Automate deployment and verify health checks.
+=======
+# TaskTracker
+simple website primarily built to practice the complete devops workflow upto deploying
+>>>>>>> 55515a9090c8ef494f48f7edb0c262dfd1bcb956
