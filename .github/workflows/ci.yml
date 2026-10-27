@@ -1,12 +1,12 @@
 name: Build and test
 on:
   push:
-    branch:
+    branches:
       - main
   pull:
-    branch:
+    branches:
       - main   
-services:
+jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
@@ -21,7 +21,7 @@ services:
       - name: sleeping
         run: sleep 10
       - name: curling to check if it ran
-        run: curl http://localhost:3000
+        run: curl --fail http://localhost:3000
       - name: docker login 
         uses: docker/login-action@v4
         with:
