@@ -29,7 +29,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: image tagging
         run: |
-          docker tag fullapp.v1 ${{ secrets.DOCKER_USERNAME }}/tasktracker:v1
+          docker tag fullapp:v1 ${{ secrets.DOCKER_USERNAME }}/tasktracker:v1
       - name: image pushing
         run: docker push ${{ secrets.DOCKER_USERNAME }}/tasktracker:v1
 
